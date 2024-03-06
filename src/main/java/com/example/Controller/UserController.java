@@ -16,145 +16,111 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.Entity.Cart;
-import com.example.Entity.Orders;
-import com.example.Entity.Product;
-import com.example.Entity.User;
 import com.example.Exceptions.CartException;
+import com.example.Exceptions.CategoryException;
 import com.example.Exceptions.OrderException;
 import com.example.Exceptions.ProductException;
 import com.example.Exceptions.UserException;
+import com.example.Model.Cart;
+import com.example.Model.Category;
+import com.example.Model.LoginDTO;
+import com.example.Model.Orders;
+import com.example.Model.Product;
+import com.example.Model.User;
+import com.example.Service.LoginService;
 import com.example.Service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 public class UserController {
 	@Autowired
 	private UserService uService;
 	
+	@Autowired
+	private LoginService logS;
+	
 	@PostMapping("/registerUser")
-	public ResponseEntity<String> createUserHandler(@RequestBody User user)	{
-		String a = null;
-		try {
-			a = uService.registerUser(user);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<String> createUserHandler(@Valid @RequestBody User user)	{
+		String a = uService.registerUser(user);
+		
 		return new ResponseEntity<String>(a, HttpStatus.CREATED);
 	}
 	
+	@GetMapping("/getAllCategory")
+	public ResponseEntity<List<Category>> getAllCategory() {
+		List<Category> result  = uService.getAllCategory();
+	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
+	}
+	
+	@GetMapping("/getAllProduct")
+	public ResponseEntity<List<Product>> getAllProducts() {
+		List<Product> result = uService.getAllProducts();
+	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
+	}
+	
+	@PostMapping("/login")
+	public ResponseEntity<String> logInUserHandler(@Valid @RequestBody LoginDTO dto) throws UserException {
+		LoginDTO ldto = new LoginDTO(dto.getPhonenumber(), dto.getPassword());
+		String result = logS.loginUser(ldto);
+		return new ResponseEntity<String>(result,HttpStatus.OK );
+	}
+	
+	@PostMapping("/logout")
+	public String logoutUserHandler(@Valid @RequestParam(required = false) String sessionid) throws UserException {
+		return logS.logOut(sessionid);
+	}
+	
 	@PutMapping("/updateUser")
-	public ResponseEntity<String> updateUserHandler(@RequestParam Integer id,@RequestBody User user){
-		String a = null;
-		try {
-			a = uService.updateProfile(id,user);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<String> updateUserHandler(@Valid @RequestParam(required = false) String email,@RequestParam(required = false) String mobileNumber,@RequestParam(required = false) String picture,@RequestParam(required = false) String username,@RequestParam String address,@RequestParam String sessionid){
+		String a = uService.updateProfile(email,mobileNumber,username,picture,address,sessionid);
 		return new ResponseEntity<String>(a, HttpStatus.OK);
 	}
 	
 	@PutMapping("/updatePassword/{id}")
-	public ResponseEntity<String> updatePasswordHandler(@PathVariable("id") Integer id,@RequestParam String password){
-		String a = null;
-		try {
-			a = uService.changePassword(id,password);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<String> updatePasswordHandler(@Valid @PathVariable("id") Integer id,@RequestParam String password){
+		String a  = uService.changePassword(id,password);
+		
 		return new ResponseEntity<String>(a, HttpStatus.OK);
 	}
 
 	@PostMapping("/addToCart/{userId}")
-	public ResponseEntity<String> addToCartHandler(@PathVariable("userId") Integer userId, @RequestParam Integer pId) {
-	    String result = null;
-		try {
-			result = uService.addToCart(userId, pId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ProductException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<String> addToCartHandler(@Valid @PathVariable("userId") Integer userId, @RequestParam Integer pId) {
+	    String result  = uService.addToCart(userId, pId);
 	    return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 	
 	@DeleteMapping("/removeFromCart/{userId}")
-	public ResponseEntity<String> removefromCartHandler(@PathVariable("userId") Integer userId, @RequestParam Integer pId) {
-	    String result = null;
-		try {
-			result = uService.removeFromCart(userId, pId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ProductException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CartException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<String> removefromCartHandler(@Valid @PathVariable("userId") Integer userId, @RequestParam Integer pId) {
+	    String result = uService.removeFromCart(userId, pId);
+		
 	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
 	
 	@GetMapping("/showCart/{userId}")
-	public ResponseEntity<Cart> showCart(@PathVariable("userId") Integer userId) {
-	    Cart result = null;
-		try {
-			result = uService.showCart(userId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public ResponseEntity<Cart> showCart(@Valid @PathVariable("userId") Integer userId) {
+	    Cart result =  uService.showCart(userId);
 	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
 	
-	@GetMapping("/getOrder/{userId}")
-	public ResponseEntity<List<Orders>> getAllOrders(@PathVariable("userId") Integer userId) {
-		List<Orders> result = null;
-		try {
-			result = uService.getOrder(userId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (OrderException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	@GetMapping("/getOrder")
+	public ResponseEntity<List<Orders>> getAllOrders(@Valid @RequestParam String sessionid) {
+		List<Orders> result = uService.getOrder(sessionid);
+		
 	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
 	
-	@PostMapping("/placeOrder/{userId}")
-	public ResponseEntity<String> placeOrders(@PathVariable("userId") Integer userId,@RequestParam Integer productId) {
-		String result = null;
-		try {
-			result = uService.placeAnOrder(userId,productId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ProductException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	@PostMapping("/placeOrder")
+	public ResponseEntity<String> placeOrders(@Valid @RequestParam Integer productId,@RequestParam String sessionid) {
+		String result = uService.placeAnOrder(productId,sessionid);
+		
 	    
 	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
 	
-	@PostMapping("/proceedCart/{userId}")
-	public ResponseEntity<String> proceedCart(@PathVariable("userId") Integer userId) {
-		String result = null;
-		try {
-			result = uService.proceedCart(userId);
-		} catch (UserException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CartException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	@PostMapping("/proceedCart")
+	public ResponseEntity<String> proceedCart(@Valid @RequestParam String sessionid) {
+		String result = uService.proceedCart(sessionid);
 	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
 	

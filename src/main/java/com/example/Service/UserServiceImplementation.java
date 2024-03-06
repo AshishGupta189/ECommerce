@@ -7,21 +7,26 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.Entity.Cart;
-import com.example.Entity.CartProduct;
-import com.example.Entity.Orders;
-import com.example.Entity.OrdersProduct;
-import com.example.Entity.Product;
-import com.example.Entity.User;
 import com.example.Exceptions.CartException;
+import com.example.Exceptions.CategoryException;
 import com.example.Exceptions.OrderException;
 import com.example.Exceptions.ProductException;
 import com.example.Exceptions.UserException;
+import com.example.Model.Cart;
+import com.example.Model.CartProduct;
+import com.example.Model.Category;
+import com.example.Model.Orders;
+import com.example.Model.OrdersProduct;
+import com.example.Model.Product;
+import com.example.Model.User;
+import com.example.Model.UserSession;
 import com.example.Repository.CartProductRepository;
 import com.example.Repository.CartRepository;
+import com.example.Repository.CategoryRepository;
 import com.example.Repository.OrdersRepository;
 import com.example.Repository.ProductRepository;
 import com.example.Repository.UserRepository;
+import com.example.Repository.UserSessionRepository;
 
 @Service
 public class UserServiceImplementation implements UserService{
@@ -36,12 +41,19 @@ public class UserServiceImplementation implements UserService{
 	private OrdersRepository oRepo;
 	
 	@Autowired
+	
 	private ProductRepository pRepo;
 	
 	@Autowired
+	private CategoryRepository cRepo;
+	
+	@Autowired
 	private CartProductRepository cpr;
+	
+	@Autowired
+	private UserSessionRepository usession;
 	@Override
-	public Cart showCart(int userId) throws UserException {
+	public Cart showCart(int userId){
 		// TODO Auto-generated method stub
 		User us=userRepo.findById(userId).orElse(null);
 		if(us==null) {
@@ -50,35 +62,56 @@ public class UserServiceImplementation implements UserService{
 		Cart cart=us.getCart();
 		return cart;
 	}
+	
+	@Override
+	public List<Product> getAllProducts() {
+		List<Product> list=new ArrayList<>();
+		list =pRepo.findAll();
+		return list;
+	}
 
 	@Override
-	public String updateProfile(int userId, User user) throws UserException {
-		User us=userRepo.findById(userId).orElse(null);
+	public List<Category> getAllCategory(){
+		// TODO Auto-generated method stub
+		List<Category> list=new ArrayList<>();
+		list =cRepo.findAll();
+		if(list.isEmpty()) {
+			throw new CategoryException("No categories present");
+		}
+		return list;
+	}
+	@Override
+	public String updateProfile(String email,String mobileNumber,String username,String picture,String address,String sessionid) {
+		UserSession uss=usession.findBySessionId(sessionid);
+		if(uss==null) {
+			throw new UserException("Not logged in !! . Please login first.");
+		}
+		User us=userRepo.findById(uss.getUserid()).orElse(null);
 		if(us==null) {
-			throw new UserException("No User found with  UserId : "+userId +". Please register first !");
+			throw new UserException("No User found with  UserId : "+uss.getUserid() +". Please register first !");
 			
 		}
-		if(user.getAddress()!=null) {
-			us.setAddress(user.getAddress());
+		if(address!=null) {
+			us.setAddress(address);
 		}
-		if(user.getMobileNumber()!=null) {
-			us.setMobileNumber(user.getMobileNumber());
+		if(mobileNumber!=null) {
+			us.setMobileNumber(mobileNumber);
 		}
-		if(user.getPicture()!=null) {
-			us.setPicture(user.getPicture());
+		if(picture!=null) {
+			us.setPicture(picture);
 		}
-		if(user.getUserName()!=null) {
-			us.setUserName(user.getUserName());
+		if(username!=null) {
+			us.setUserName(username);
 		}
-		if(user.getUserEmail()!=null) {
-			us.setUserEmail(user.getUserEmail());
+		if(email!=null) {
+			us.setUserEmail(email);
 		}
 		userRepo.save(us);
 		return "Profile updated successfully";
 		}
 
 	@Override
-	public String registerUser(User user) throws UserException {
+	public String registerUser(User user) {
 		// TODO Auto-generated method stub
 		User us=userRepo.findByMobileNumber(user.getMobileNumber());
 		
@@ -96,13 +129,17 @@ public class UserServiceImplementation implements UserService{
 	}
 
 	@Override
-	public List<Orders> getOrder(int userId) throws UserException, OrderException {
-		User us=userRepo.findById(userId).orElse(null);
+	public List<Orders> getOrder(String sessionid) {
+		UserSession uss=usession.findBySessionId(sessionid);
+		if(uss==null) {
+			throw new UserException("Not logged in !! . Please login first.");
+		}
+		User us=userRepo.findById(uss.getUserid()).orElse(null);
 		if(us==null) {
-			throw new UserException("No User found with  UserId : "+userId +". Please register first !");
+			throw new UserException("No User found with  UserId : "+uss.getUserid() +". Please register first !");
 		}
 		if(us.getOrders().isEmpty()) {
-			throw new OrderException("No Orders found for user with  UserId : "+userId +". Please order something first !");
+			throw new OrderException("No Orders found for user with  UserId : "+uss.getUserid() +". Please order something first !");
 		}
 		
 		return us.getOrders();
@@ -111,10 +148,14 @@ public class UserServiceImplementation implements UserService{
 
 
 	@Override
-	public String proceedCart(int userId) throws UserException, CartException {
-		User us=userRepo.findById(userId).orElse(null);
+	public String proceedCart(String sessionid) {
+		UserSession uss=usession.findBySessionId(sessionid);
+		if(uss==null) {
+			throw new UserException("Not logged in !! . Please login first.");
+		}
+		User us=userRepo.findById(uss.getUserid()).orElse(null);
 		if(us==null) {
-			throw new UserException("No User found with  UserId : "+userId +". Please register first !");
+			throw new UserException("No User found with  UserId : "+uss.getUserid() +". Please register first !");
 		}
 		Cart cart=us.getCart();
 		if(cart.getCartProducts().size()==0) {
@@ -155,7 +196,7 @@ public class UserServiceImplementation implements UserService{
 	}
 	
 	@Override
-	public String addToCart(int userId, int productId) throws UserException, ProductException {
+	public String addToCart(int userId, int productId) {
 		User us=userRepo.findById(userId).orElse(null);
 		if(us==null) {
 			throw new UserException("No User found with  UserId : "+userId +". Please register first !");
@@ -183,10 +224,16 @@ public class UserServiceImplementation implements UserService{
 	}
 	
 	@Override
-	public String placeAnOrder(int userId, int productId) throws UserException,ProductException {
-		User us=userRepo.findById(userId).orElse(null);
+	public String placeAnOrder( int productId,String sessionid)  {
+		
+		UserSession uss=usession.findBySessionId(sessionid);
+		if(uss==null) {
+			throw new UserException("Not logged in !! . Please login first.");
+		}
+		
+		User us=userRepo.findById(uss.getUserid()).orElse(null);
 		if(us==null) {
-			throw new UserException("No User found with  UserId : "+userId +". Please register first !");
+			throw new UserException("No User found with  UserId : "+uss.getUserid() +". Please register first !");
 		}
 		Product pro=pRepo.findById(productId).orElse(null);
 		if(pro==null) {
@@ -208,7 +255,7 @@ public class UserServiceImplementation implements UserService{
 
 	
 	
-	public String removeFromCart(int userId, int productId) throws UserException , ProductException , CartException {
+	public String removeFromCart(int userId, int productId)  {
 	    User user = userRepo.findById(userId).orElse(null);
 	    if (user == null) {
 	    	throw new UserException("No User found with  UserId : "+userId +". Please register first !");
@@ -253,7 +300,7 @@ public class UserServiceImplementation implements UserService{
 
 
 	@Override
-	public String changePassword(int userId, String password) throws UserException {
+	public String changePassword(int userId, String password) {
 		User us=userRepo.findById(userId).orElse(null);
 		if(us==null) {
 			throw new UserException("No User found with  UserId : "+userId +". Please register first !");

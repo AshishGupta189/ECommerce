@@ -1,6 +1,6 @@
 package com.example.Exceptions;
 
-public class ProductException extends Exception{
+public class ProductException extends RuntimeException{
 
 	public ProductException() {
 		// TODO Auto-generated constructor stub

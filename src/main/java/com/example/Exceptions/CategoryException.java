@@ -1,6 +1,6 @@
 package com.example.Exceptions;
 
-public class CategoryException extends Exception{
+public class CategoryException extends RuntimeException{
 
 	public CategoryException() {
 		// TODO Auto-generated constructor stub
