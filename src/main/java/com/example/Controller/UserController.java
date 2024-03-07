@@ -67,12 +67,12 @@ public class UserController {
 	}
 	
 	@PostMapping("/logout")
-	public String logoutUserHandler(@Valid @RequestParam(required = false) String sessionid) throws UserException {
+	public String logoutUserHandler(@Valid @RequestParam String sessionid) throws UserException {
 		return logS.logOut(sessionid);
 	}
 	
 	@PutMapping("/updateUser")
-	public ResponseEntity<String> updateUserHandler(@Valid @RequestParam(required = false) String email,@RequestParam(required = false) String mobileNumber,@RequestParam(required = false) String picture,@RequestParam(required = false) String username,@RequestParam String address,@RequestParam String sessionid){
+	public ResponseEntity<String> updateUserHandler(@Valid @RequestParam(required = false) String email,@RequestParam(required = false) String mobileNumber,@RequestParam(required = false) String picture,@RequestParam(required = false) String username,@RequestParam(required = false) String address,@RequestParam String sessionid){
 		String a = uService.updateProfile(email,mobileNumber,username,picture,address,sessionid);
 		return new ResponseEntity<String>(a, HttpStatus.OK);
 	}
